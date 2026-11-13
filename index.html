@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#14171c">
+<title>ShootMe</title>
+<style>
+  :root { --accent:#f5a524; --bg:#14171c; --panel:rgba(20,23,28,.92); --text:#e8e6e1; --muted:#9aa0a6; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  canvas { position:fixed; inset:0; width:100vw; height:100vh; display:block; }
+  #view { image-rendering:pixelated; image-rendering:crisp-edges; }
+  #hud { pointer-events:none; }
+  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(8,10,13,.55); z-index:10; padding:16px; }
+  .hidden { display:none !important; }
+  .panel { background:var(--panel); border:1px solid #2c323a; border-radius:14px; padding:22px 24px;
+    width:min(420px,100%); max-height:100%; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  h1 { margin:0; font-size:44px; letter-spacing:2px; font-weight:900; line-height:1; }
+  h1 span { color:var(--accent); }
+  h2 { margin:0 0 10px; font-size:22px; }
+  .sub { color:var(--muted); margin:6px 0 18px; font-size:14px; }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:12px; }
+  input, select { width:100%; margin-top:5px; padding:10px 12px; font-size:16px; border-radius:8px;
+    border:1px solid #39414b; background:#0d0f13; color:var(--text); outline:none; -webkit-user-select:text; user-select:text; }
+  input:focus, select:focus { border-color:var(--accent); }
+  button { font:inherit; cursor:pointer; }
+  .btn { display:block; width:100%; padding:12px; margin:8px 0; font-size:16px; font-weight:700;
+    border:0; border-radius:9px; background:#2a3038; color:var(--text); }
+  .btn:hover { background:#353c46; }
+  .btn.primary { background:var(--accent); color:#1a1300; }
+  .btn.primary:hover { filter:brightness(1.08); }
+  .btn.danger { background:#5b2326; }
+  .join { display:flex; gap:8px; align-items:stretch; margin-top:8px; }
+  .join input { margin:0; text-transform:uppercase; letter-spacing:4px; font-weight:700; text-align:center; flex:1; }
+  .join .btn { margin:0; width:auto; padding:0 18px; }
+  .divider { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 4px; }
+  #status { min-height:20px; font-size:14px; color:var(--accent); margin:10px 0 0; }
+  details { margin-top:14px; font-size:13px; color:var(--muted); }
+  details summary { cursor:pointer; color:var(--text); }
+  details ul { padding-left:18px; margin:8px 0 0; line-height:1.6; }
+  .code { font-size:30px; font-weight:900; letter-spacing:6px; color:var(--accent); text-align:center; margin:4px 0; }
+  .small { font-size:12px; color:var(--muted); text-align:center; word-break:break-all; }
+  /* Touch */
+  #touch { position:fixed; inset:0; z-index:5; }
+  #stick { position:absolute; width:130px; height:130px; border-radius:50%; border:2px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06); left:30px; bottom:30px; pointer-events:none; }
+  #knob { position:absolute; width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,.35);
+    left:37px; top:37px; }
+  .tbtn { position:absolute; border-radius:50%; border:2px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12);
+    color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  #tFire { width:96px; height:96px; right:28px; bottom:40px; background:rgba(229,72,77,.45); font-size:15px; }
+  #tReload { width:58px; height:58px; right:140px; bottom:30px; font-size:20px; }
+  #tMenu { width:46px; height:46px; right:16px; top:16px; font-size:20px; border-radius:10px; }
+  #tScore { width:46px; height:46px; right:72px; top:16px; font-size:18px; border-radius:10px; }
+  .tbtn.on { background:rgba(255,255,255,.35); }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<canvas id="hud"></canvas>
+
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <button class="tbtn" id="tFire">FEUER</button>
+  <button class="tbtn" id="tReload">↻</button>
+  <button class="tbtn" id="tScore">#</button>
+  <button class="tbtn" id="tMenu">☰</button>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="panel">
+    <h1>SHOOT<span>ME</span></h1>
+    <p class="sub">Arena-Shooter im Browser · Online-Multiplayer per P2P</p>
+    <label>Dein Name <input id="name" maxlength="14" autocomplete="off" placeholder="Spieler"></label>
+    <label>Bots (Solo &amp; als Host)
+      <select id="bots">
+        <option value="0">Keine</option><option value="1">1</option><option value="2">2</option>
+        <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+        <option value="6">6</option><option value="7">7</option>
+      </select>
+    </label>
+    <button class="btn" id="btnSolo">Solo gegen Bots</button>
+    <button class="btn primary" id="btnHost">Online-Spiel hosten</button>
+    <div class="divider">— oder einem Spiel beitreten —</div>
+    <div class="join">
+      <input id="code" maxlength="5" placeholder="CODE" autocomplete="off">
+      <button class="btn primary" id="btnJoin">Beitreten</button>
+    </div>
+    <p id="status"></p>
+    <details>
+      <summary>Steuerung</summary>
+      <ul>
+        <li><b>PC:</b> WASD bewegen · Maus zielen · Linksklick schießen · R nachladen · Tab Punktestand · Esc Menü</li>
+        <li><b>Handy:</b> linke Seite Joystick · rechte Seite wischen zum Zielen · FEUER halten</li>
+        <li>Online: Host teilt den 5-stelligen Code oder Einladungslink. Verbindung läuft direkt zwischen den Browsern (WebRTC).</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="panel">
+    <h2>Pausiert</h2>
+    <div id="roomBox" class="hidden">
+      <div class="small">Raumcode</div>
+      <div class="code" id="roomCode">-----</div>
+      <div class="small" id="roomLink"></div>
+      <button class="btn" id="btnCopy">Einladungslink kopieren</button>
+    </div>
+    <p class="small" id="pauseHint">Im Online-Spiel läuft das Match weiter.</p>
+    <button class="btn primary" id="btnResume">Weiterspielen</button>
+    <button class="btn danger" id="btnLeave">Spiel verlassen</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"
+        onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';document.head.appendChild(s);"></script>
+<script src="game.js"></script>
+</body>
+</html>
