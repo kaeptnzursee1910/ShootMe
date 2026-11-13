@@ -20,6 +20,17 @@ Kein Server, kein Build-Schritt: nur `index.html` + `game.js`.
 | Punktestand | Tab | # |
 | Menü / Pause | Esc | ☰ |
 
+## Counter-Strike 1.6 mit eigenen Dateien (`/cs16/`)
+
+Unter `…/ShootMe/cs16/` liegt ein Launcher, der Counter-Strike 1.6 mit der freien Engine
+[Xash3D FWGS](https://github.com/FWGS/xash3d-fwgs) (WebAssembly-Port *webxash3d-fwgs* + *cs16-client*) im Browser startet – auch auf dem iPad.
+
+- Das Repository enthält **keine** Spieldateien von Valve. Du wählst eine ZIP mit den Ordnern `valve/` und `cstrike/`
+  aus deiner eigenen Installation (z. B. Steam). Die Dateien werden nur lokal im Browser entpackt.
+- `valve/maps` und `valve/media` werden übersprungen (braucht CS nicht) – am besten gar nicht erst in die ZIP packen, das spart Speicher.
+- iPad: WebGL 2 (ab iPadOS 15), am besten mit Tastatur + Maus/Trackpad. Große ZIPs können den Safari-Tab wegen Speichermangels abstürzen lassen.
+- Engine und Client werden zur Laufzeit von jsDelivr geladen (`xash3d-fwgs@latest`, `cs16-client@latest`). Fehlermeldungen stehen unter „Technisches Protokoll“.
+
 ## Online stellen (GitHub Pages)
 
 1. Repository → **Settings → Pages**
